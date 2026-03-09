@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.env
+
+# ChromaDB persistent storage
+chroma_storage/
+
+# Temp audio files
+temp_audio/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Logs
+*.log
+
+# Whisper model cache (downloaded at runtime)
+# These are stored in ~/.cache/whisper/ by default
+
+# Misc
+*.wav
+*.mp3
