@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 from pydantic import BaseModel
+from typing import Optional
 from starlette.responses import FileResponse
 import shutil
 import os
@@ -15,7 +16,7 @@ router = APIRouter()
 
 class QueryRequest(BaseModel):
     query: str
-    project: str = None
+    project: Optional[str] = None
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...), project: str = Query(None)):
