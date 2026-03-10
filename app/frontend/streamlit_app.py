@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 import os
 
-API_URL = os.environ.get("API_URL", "http://localhost:8000")
+# Render automatically sets RENDER_EXTERNAL_URL (e.g., https://echorag.onrender.com)
+API_URL = os.environ.get("RENDER_EXTERNAL_URL", os.environ.get("API_URL", "http://localhost:8000"))
 
 st.set_page_config(page_title="EchoRAG Assistant", page_icon="🗣️", layout="wide")
 
