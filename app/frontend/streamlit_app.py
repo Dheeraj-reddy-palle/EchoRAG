@@ -3,8 +3,8 @@ import requests
 import os
 
 # Streamlit `requests` run on the server, not in the browser. 
-# Therefore it can just talk to the FastAPI backend running in the same Docker container.
-API_URL = "http://0.0.0.0:8000"
+# Inside a Docker container, the loopback address is 127.0.0.1
+API_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(page_title="EchoRAG Assistant", page_icon="🗣️", layout="wide")
 
