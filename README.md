@@ -1,26 +1,25 @@
 # 🗣️ EchoRAG — Cloud-Native Voice RAG Assistant
 
-A lightning-fast, highly optimized Retrieval-Augmented Generation (RAG) assistant designed for instant cloud deployments (like Render's Free Tier). EchoRAG lets you upload documents, create topic-specific projects, and ask questions via text or voice.
+A lightning-fast Retrieval-Augmented Generation (RAG) assistant designed for instant cloud deployment. Upload documents, create topic-specific projects, and ask questions via text or voice.
 
 **[🌐 Live App](https://echorag.onrender.com)** | **[📖 API Docs](https://echorag.onrender.com/docs)** | **[🩺 Backend Health](https://echorag.onrender.com/health)**
 
-## ⚡ Tech Stack
+---
 
-- **Frontend:** Streamlit, Vanilla CSS (Glassmorphism)
-- **Backend:** FastAPI, Python 3.12, Uvicorn
+## ⚡ Tech Stack
+- **UI:** Streamlit, Vanilla CSS (Glassmorphism)
+- **API:** FastAPI, Python 3.12, Uvicorn
 - **AI Models:** Groq API (`llama-3.1-8b`, `whisper-large-v3`)
-- **Vector Search:** `rank-bm25` (Pure Python TF-IDF Keyword matching)
-- **Deployment:** Docker, Render (Free Tier Optimized)
+- **Search:** `rank-bm25` (Pure Python TF-IDF Keyword matching)
+- **Infra:** Docker, Render (Free Tier Optimized)
 
 ## 🚀 Key Features
+- **Project Workspaces** — Isolate documents into specific projects (e.g., Physics, Biology).
+- **Ultra-Lightweight** — Replaced memory-heavy ChromaDB with pure Python BM25 JSON persistence, cutting RAM usage by >90%.
+- **Voice Native** — Speak your questions using Groq Whisper V3 for instant transcription.
+- **Fail-Safe Docker** — Custom Python `launcher.py` boots FastAPI and Streamlit concurrently and cleanly auto-restarts on OOMs.
 
-- **Project-Based Knowledge** — Create isolated projects (e.g., Physics, Biology) to keep your document collections organized.
-- **Ultra-Lightweight Vector Store** — Replaced memory-heavy ChromaDB with a pure Python `BM25` search algorithm + JSON persistence, dropping memory usage by >90%.
-- **Cloud-Native AI** — Powered entirely by the blazing-fast **Groq API**:
-  - `llama-3.1-8b-instant` for LLM inference
-  - `whisper-large-v3` for robust Voice-to-Text transcription
-- **Dockerized & Self-Healing** — Features a custom Python process manager (`launcher.py`) that boots FastAPI and Streamlit safely and cleanly restarts on OOMs.
-- **Premium Dark UI** — Streamlit frontend styled with glassmorphism and modern gradient aesthetics.
+---
 
 ## 🏗️ Architecture
 
@@ -33,34 +32,14 @@ graph TD;
     API -->|Text| gTTS["Google TTS"];
 ```
 
-## 🛠️ Project Structure
+---
 
-```
-EchoRAG/
-├── app/
-│   ├── main.py                 # FastAPI Application Factory
-│   ├── api/routes.py           # REST Endpoints (/ask, /upload, /voice)
-│   ├── frontend/streamlit_app.py # Premium UI
-│   ├── ingestion/              # PDF & TXT Chunking Logic
-│   ├── llm/llm_engine.py       # Groq API Integration
-│   ├── rag/rag_pipeline.py     # Orchestration
-│   ├── retrieval/retriever.py  # BM25 Search Engine
-│   ├── utils/config.py         # Env Variables Config
-│   ├── vectorstore/chroma_db.py # Legacy name, now pure BM25 Core
-│   └── voice/                  # Groq Whisper STT & gTTS
-├── launcher.py                 # Self-healing Process Manager
-├── Dockerfile                  # Cloud Deployment Definition
-├── render.yaml                 # Render Blueprint
-└── requirements.txt            # Minimal Cloud Dependencies
-```
+## 💻 Local Setup
 
-## 💻 Local Development Setup
+You can run EchoRAG locally exactly how it runs in the cloud.
 
-### 1. Prerequisites
-- Python 3.12+
-- A [Groq API Key](https://console.groq.com/keys)
-
-### 2. Installation
+### 1. Install Dependencies
+Ensure you have **Python 3.12+** installed.
 ```bash
 git clone https://github.com/yourusername/EchoRAG.git
 cd EchoRAG
@@ -70,44 +49,43 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables
-Create a `.env` file in the root directory (or simply export it):
+### 2. Set API Key
+Create a `.env` file or export your [Groq API Key](https://console.groq.com/keys):
 ```bash
 export GROQ_API_KEY="gsk_your_api_key_here"
 ```
 
-### 4. Run the Application
-The easiest way to replicate the cloud environment locally is to use the custom launcher:
+### 3. Launch the App
+Use the custom process manager to automatically start and sync both the frontend and backend:
 ```bash
 python launcher.py
 ```
-This will cleanly boot FastAPI on port `8000` and Streamlit on port `8501`. 
-Open `http://localhost:8501` to use the app!
+👉 **Open `http://localhost:8501` to use the app!**
 
-## ☁️ Cloud Deployment (Render.com)
+---
 
-This application is meticulously optimized to run flawlessly on the **Render Free Tier** (512MB RAM).
+## ☁️ Cloud Deployment (Render)
 
-1. Go to [Render.com](https://render.com) and create a new **Web Service**.
-2. Connect your GitHub repository.
-3. Render will automatically detect the `render.yaml` Blueprint file.
-4. Add your **`GROQ_API_KEY`** in the Render Environment Variables tab.
-5. Deploy!
+EchoRAG is optimized to run flawlessly within Render's 512MB Free Tier.
 
-The custom `launcher.py` and strictly bound `127.0.0.1` internal routing ensures that standard Docker connection bugs are completely eliminated in the cloud sandbox.
+1. Create a new **Web Service** on [Render.com](https://render.com).
+2. Connect this GitHub repository.
+3. Render will auto-detect the `render.yaml` configuration.
+4. Add `GROQ_API_KEY` to the **Environment Variables** tab.
+5. Click **Deploy**.
 
-## 📡 API Endpoints
+*The custom `launcher.py` ensures 127.0.0.1 internal networking works perfectly inside Render's Docker sandbox.*
+
+---
+
+## 📡 Core API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET    | `/health` | Health Check |
-| POST   | `/upload?project=xyz` | Ingests a PDF/TXT into the BM25 store |
-| POST   | `/ask` | Ask a RAG question (JSON Body: `{"query": "...", "project": "xyz"}`) |
-| GET    | `/projects` | List created projects |
-| POST   | `/projects/create?name=xyz`| Create a new project index |
-| POST   | `/voice/transcribe` | Upload `.wav` to Groq Whisper for STT |
-| POST   | `/voice/ask` | Full Audio-in, RAG, Audio-out pipeline |
+| **POST** | `/upload?project=xyz` | Ingests a PDF/TXT into the BM25 store |
+| **POST** | `/ask` | Process a RAG query |
+| **POST** | `/projects/create?name=xyz`| Create a new project workspace |
+| **POST** | `/voice/transcribe` | Upload `.wav` for Voice-to-Text |
 
 ## 📜 License
-
 MIT License
