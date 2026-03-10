@@ -34,6 +34,29 @@ graph TD;
 
 ---
 
+## 📂 Project Structure
+
+```text
+EchoRAG/
+├── app/
+│   ├── main.py                 # FastAPI Application Factory
+│   ├── api/routes.py           # REST Endpoints (/ask, /upload, /voice)
+│   ├── frontend/streamlit_app.py # Premium UI & Layouts
+│   ├── ingestion/              # PDF & TXT Chunking Logic
+│   ├── llm/llm_engine.py       # Groq API Integration (Llama 3.1)
+│   ├── rag/rag_pipeline.py     # RAG Orchestration logic
+│   ├── retrieval/retriever.py  # BM25 Search Engine calls
+│   ├── utils/config.py         # Env Variables Configuration
+│   ├── vectorstore/chroma_db.py # Core BM25 Index & JSON Persistence
+│   └── voice/                  # Groq Whisper STT & gTTS audio logic
+├── launcher.py                 # Self-healing Process Manager for Docker
+├── Dockerfile                  # Cloud Deployment Blueprint
+├── render.yaml                 # Render Automation Config
+└── requirements.txt            # Minimal Cloud Dependencies
+```
+
+---
+
 ## 💻 Local Setup
 
 You can run EchoRAG locally exactly how it runs in the cloud.
