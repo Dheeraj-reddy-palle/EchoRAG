@@ -2,6 +2,8 @@
 
 A lightning-fast, highly optimized Retrieval-Augmented Generation (RAG) assistant designed for instant cloud deployments (like Render's Free Tier). EchoRAG lets you upload documents, create topic-specific projects, and ask questions via text or voice.
 
+**[🌐 View Live App on Render](https://echorag.onrender.com)**
+
 ## 🚀 Key Features
 
 - **Project-Based Knowledge** — Create isolated projects (e.g., Physics, Biology) to keep your document collections organized.
@@ -18,9 +20,9 @@ A lightning-fast, highly optimized Retrieval-Augmented Generation (RAG) assistan
 graph TD;
     UI[Streamlit Frontend] -->|Internal 127.0.0.1| API[FastAPI Backend];
     API -->|Uploads| BM25[(BM25 JSON Store)];
-    API -->|Prompts| GroqLLM[Groq (Llama 3.1)];
-    API -->|Audio| GroqWhisper[Groq (Whisper V3)];
-    API -->|Text| gTTS[Google TTS];
+    API -->|Prompts| GroqLLM["Groq (Llama 3.1)"];
+    API -->|Audio| GroqWhisper["Groq (Whisper V3)"];
+    API -->|Text| gTTS["Google TTS"];
 ```
 
 ## 🛠️ Project Structure
