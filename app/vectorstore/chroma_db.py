@@ -1,112 +1,94 @@
 import os
-import chromadb
-from chromadb.config import Settings
+import json
+from rank_bm25 import BM25Okapi
 from app.utils.config import CHROMA_PERSIST_DIR
 from app.utils.logger import logger
-from app.embeddings.embedding_model import get_embeddings
-
-logger.info("Initializing ChromaDB persistent client at %s", CHROMA_PERSIST_DIR)
 
 os.makedirs(CHROMA_PERSIST_DIR, exist_ok=True)
 
-try:
-    client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR, settings=Settings(anonymized_telemetry=False))
-except AttributeError:
-    client = chromadb.Client(Settings(persist_directory=CHROMA_PERSIST_DIR, anonymized_telemetry=False))
+def _get_project_file(project: str) -> str:
+    safe_name = project.lower().replace(" ", "_").replace("-", "_") if project else "default"
+    return os.path.join(CHROMA_PERSIST_DIR, f"{safe_name}.json")
 
-# Default collection for backward compatibility
-collection = client.get_or_create_collection("documents")
+def _load_project(project: str) -> dict:
+    file_path = _get_project_file(project)
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading project {project}: {e}")
+    return {"name": project or "default", "chunks": []}
 
-def _get_project_collection(project: str):
-    """Gets or creates a ChromaDB collection for a specific project."""
-    safe_name = project.lower().replace(" ", "_").replace("-", "_")
-    return client.get_or_create_collection(safe_name)
+def _save_project(project: str, data: dict):
+    file_path = _get_project_file(project)
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
 
 def store_chunks(chunks: list[dict], project: str = None):
-    """Stores text chunks and their embeddings into ChromaDB."""
     if not chunks:
         logger.warning("No chunks provided to store.")
         return
-    
-    col = _get_project_collection(project) if project else collection
-    
-    texts = [chunk["text"] for chunk in chunks]
-    metadatas = [chunk["metadata"] for chunk in chunks]
-    ids = [f"{chunk['metadata']['source']}_{chunk['metadata']['chunk_id']}" for chunk in chunks]
-    
-    logger.info("Generating embeddings for %d chunks (project: %s)", len(chunks), project or "default")
-    try:
-        embeddings = get_embeddings(texts)
-    except Exception as e:
-        logger.error("Failed to generate embeddings: %s", str(e))
-        return
-    
-    try:
-        col.upsert(documents=texts, embeddings=embeddings, metadatas=metadatas, ids=ids)
-        logger.info("Stored %d chunks in project '%s'", len(chunks), project or "default")
-    except Exception as e:
-        logger.error("Failed to store chunks: %s", str(e))
+    data = _load_project(project)
+    data["chunks"].extend(chunks)
+    _save_project(project, data)
+    logger.info("Stored %d chunks in project '%s'", len(chunks), project or "default")
 
 def create_project(project: str):
-    """Creates a new empty project collection."""
-    safe_name = project.lower().replace(" ", "_").replace("-", "_")
-    client.get_or_create_collection(safe_name)
-    logger.info("Created project collection: %s", safe_name)
+    data = _load_project(project)
+    _save_project(project, data)
+    logger.info("Created project collection: %s", project)
 
 def list_projects() -> list[dict]:
-    """Returns all project collections with their document count."""
-    try:
-        collections = client.list_collections()
-        projects = []
-        for col in collections:
-            if col.name == "documents":
-                continue
-            projects.append({"name": col.name, "chunks": col.count()})
-        return projects
-    except Exception as e:
-        logger.error("Failed to list projects: %s", str(e))
-        return []
+    projects = []
+    for filename in os.listdir(CHROMA_PERSIST_DIR):
+        if filename.endswith(".json") and filename != "default.json":
+            file_path = os.path.join(CHROMA_PERSIST_DIR, filename)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    projects.append({"name": data["name"], "chunks": len(data.get("chunks", []))})
+            except:
+                pass
+    return projects
 
 def list_sources(project: str = None) -> list[dict]:
-    """Returns unique document sources with chunk counts for a project."""
-    try:
-        col = _get_project_collection(project) if project else collection
-        result = col.get(include=["metadatas"])
-        sources = {}
-        for meta in result.get("metadatas", []):
-            name = meta.get("source", "Unknown")
-            sources[name] = sources.get(name, 0) + 1
-        return [{"name": name, "chunks": count} for name, count in sources.items()]
-    except Exception as e:
-        logger.error("Failed to list sources: %s", str(e))
-        return []
+    data = _load_project(project)
+    sources = {}
+    for chunk in data.get("chunks", []):
+        name = chunk.get("metadata", {}).get("source", "Unknown")
+        sources[name] = sources.get(name, 0) + 1
+    return [{"name": name, "chunks": count} for name, count in sources.items()]
 
 def delete_source(source_name: str, project: str = None):
-    """Deletes all chunks belonging to a specific document source."""
-    try:
-        col = _get_project_collection(project) if project else collection
-        result = col.get(include=["metadatas"])
-        ids_to_delete = []
-        for i, meta in enumerate(result.get("metadatas", [])):
-            if meta.get("source") == source_name:
-                ids_to_delete.append(result["ids"][i])
-        if ids_to_delete:
-            col.delete(ids=ids_to_delete)
-            logger.info("Deleted %d chunks for '%s' in project '%s'", len(ids_to_delete), source_name, project or "default")
-    except Exception as e:
-        logger.error("Failed to delete source: %s", str(e))
+    data = _load_project(project)
+    original_count = len(data.get("chunks", []))
+    data["chunks"] = [c for c in data.get("chunks", []) if c.get("metadata", {}).get("source") != source_name]
+    _save_project(project, data)
+    logger.info("Deleted %d chunks for source '%s'", original_count - len(data["chunks"]), source_name)
 
 def delete_project(project: str):
-    """Deletes an entire project collection."""
-    try:
-        safe_name = project.lower().replace(" ", "_").replace("-", "_")
-        client.delete_collection(safe_name)
-        logger.info("Deleted project collection: %s", safe_name)
-    except Exception as e:
-        logger.error("Failed to delete project: %s", str(e))
+    file_path = _get_project_file(project)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logger.info("Deleted project collection: %s", project)
 
-def query_project(query_embedding, project: str = None, n_results: int = 3):
-    """Queries a specific project collection."""
-    col = _get_project_collection(project) if project else collection
-    results = col.query(query_embeddings=[query_embedding], n_results=n_results, include=["documents", "metadatas"])
-    return results
+def query_project(query: str, project: str = None, n_results: int = 3):
+    """Fallback BM25 search matching the expected dict signature."""
+    data = _load_project(project)
+    chunks = data.get("chunks", [])
+    if not chunks:
+        return {"documents": [[]], "metadatas": [[]]}
+    
+    # Simple BM25 scoring
+    tokenized_corpus = [c["text"].lower().split() for c in chunks]
+    bm25 = BM25Okapi(tokenized_corpus)
+    tokenized_query = query.lower().split()
+    
+    scores = bm25.get_scores(tokenized_query)
+    top_n = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:n_results]
+    
+    docs = [chunks[i]["text"] for i in top_n if scores[i] > 0]
+    metas = [chunks[i]["metadata"] for i in top_n if scores[i] > 0]
+    
+    return {"documents": [docs], "metadatas": [metas]}

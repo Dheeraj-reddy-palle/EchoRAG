@@ -1,14 +1,10 @@
-from sentence_transformers import SentenceTransformer
-from app.utils.config import EMBEDDING_MODEL
 from app.utils.logger import logger
 
-logger.info("Loading embedding model %s", EMBEDDING_MODEL)
-model = SentenceTransformer(EMBEDDING_MODEL)
-
 def get_embedding(text: str) -> list[float]:
-    """Generates an embedding vector for a given text."""
-    return model.encode(text).tolist()
+    """Stub: Embeddings are no longer used. Switched to lightweight BM25 retrieval."""
+    logger.warning("get_embedding called but embeddings are disabled for cloud memory optimization.")
+    return []
 
 def get_embeddings(texts: list[str]) -> list[list[float]]:
-    """Generates embedding vectors for a list of texts."""
-    return model.encode(texts).tolist()
+    """Stub: Embeddings are no longer used."""
+    return [[] for _ in texts]
