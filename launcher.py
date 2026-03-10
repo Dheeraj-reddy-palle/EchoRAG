@@ -5,7 +5,7 @@ import time
 def main():
     print("Starting FastAPI backend...", flush=True)
     backend = subprocess.Popen(
-        ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
+        ["uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"],
         stdout=sys.stdout,
         stderr=sys.stderr
     )
