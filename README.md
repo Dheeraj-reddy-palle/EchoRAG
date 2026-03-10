@@ -1,128 +1,103 @@
-# 🗣️ EchoRAG — Voice-Enabled RAG Assistant
+# 🗣️ EchoRAG — Cloud-Native Voice RAG Assistant
 
-A modular, voice-enabled Retrieval-Augmented Generation (RAG) assistant that lets you upload documents, create topic-specific projects, and ask questions via text or voice — all powered by local AI.
+A lightning-fast, highly optimized Retrieval-Augmented Generation (RAG) assistant designed for instant cloud deployments (like Render's Free Tier). EchoRAG lets you upload documents, create topic-specific projects, and ask questions via text or voice.
 
-## Features
+## 🚀 Key Features
 
-- **Project-Based Knowledge** — Create isolated projects (e.g., Physics, Biology) with their own document collections
-- **Document Ingestion** — Upload PDFs and TXT files, automatically chunked and embedded
-- **Semantic Search** — ChromaDB vector store with sentence-transformer embeddings
-- **Voice Input** — Record voice queries transcribed by OpenAI Whisper
-- **Local LLM** — Ollama-powered inference with Phi-3 (no cloud APIs required)
-- **Premium Dark UI** — Streamlit frontend with glassmorphism, gradient theme, and project manager
+- **Project-Based Knowledge** — Create isolated projects (e.g., Physics, Biology) to keep your document collections organized.
+- **Ultra-Lightweight Vector Store** — Replaced memory-heavy ChromaDB with a pure Python `BM25` search algorithm + JSON persistence, dropping memory usage by >90%.
+- **Cloud-Native AI** — Powered entirely by the blazing-fast **Groq API**:
+  - `llama-3.1-8b-instant` for LLM inference
+  - `whisper-large-v3` for robust Voice-to-Text transcription
+- **Dockerized & Self-Healing** — Features a custom Python process manager (`launcher.py`) that boots FastAPI and Streamlit safely and cleanly restarts on OOMs.
+- **Premium Dark UI** — Streamlit frontend styled with glassmorphism and modern gradient aesthetics.
 
-## Architecture
+## 🏗️ Architecture
 
-```
-┌─────────────┐    ┌──────────────┐    ┌───────────┐
-│  Streamlit   │───▶│  FastAPI      │───▶│  Ollama   │
-│  Frontend    │◀───│  Backend     │◀───│  (Phi-3)  │
-└─────────────┘    └──────┬───────┘    └───────────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-        ┌──────────┐ ┌─────────┐ ┌─────────┐
-        │ ChromaDB │ │ Whisper │ │ MiniLM  │
-        │ Vectors  │ │  STT    │ │ Embedder│
-        └──────────┘ └─────────┘ └─────────┘
+```mermaid
+graph TD;
+    UI[Streamlit Frontend] -->|Internal 127.0.0.1| API[FastAPI Backend];
+    API -->|Uploads| BM25[(BM25 JSON Store)];
+    API -->|Prompts| GroqLLM[Groq (Llama 3.1)];
+    API -->|Audio| GroqWhisper[Groq (Whisper V3)];
+    API -->|Text| gTTS[Google TTS];
 ```
 
-## Project Structure
+## 🛠️ Project Structure
 
 ```
 EchoRAG/
 ├── app/
-│   ├── main.py                 # FastAPI app entry point
-│   ├── api/routes.py           # API endpoints
-│   ├── embeddings/embedding_model.py
-│   ├── frontend/streamlit_app.py
-│   ├── ingestion/
-│   │   ├── document_loader.py
-│   │   ├── text_extractor.py
-│   │   └── chunking.py
-│   ├── llm/llm_engine.py      # Ollama client with timeout/retry
-│   ├── rag/
-│   │   ├── rag_pipeline.py
-│   │   └── prompt_builder.py
-│   ├── retrieval/retriever.py
-│   ├── utils/
-│   │   ├── config.py
-│   │   └── logger.py
-│   ├── vectorstore/chroma_db.py
-│   └── voice/
-│       ├── speech_to_text.py
-│       └── text_to_speech.py
-├── .streamlit/config.toml
-├── requirements.txt
-├── .gitignore
-└── README.md
+│   ├── main.py                 # FastAPI Application Factory
+│   ├── api/routes.py           # REST Endpoints (/ask, /upload, /voice)
+│   ├── frontend/streamlit_app.py # Premium UI
+│   ├── ingestion/              # PDF & TXT Chunking Logic
+│   ├── llm/llm_engine.py       # Groq API Integration
+│   ├── rag/rag_pipeline.py     # Orchestration
+│   ├── retrieval/retriever.py  # BM25 Search Engine
+│   ├── utils/config.py         # Env Variables Config
+│   ├── vectorstore/chroma_db.py # Legacy name, now pure BM25 Core
+│   └── voice/                  # Groq Whisper STT & gTTS
+├── launcher.py                 # Self-healing Process Manager
+├── Dockerfile                  # Cloud Deployment Definition
+├── render.yaml                 # Render Blueprint
+└── requirements.txt            # Minimal Cloud Dependencies
 ```
 
-## Prerequisites
+## 💻 Local Development Setup
 
-- **Python 3.12+**
-- **Ollama** — Local LLM runtime
-- **ffmpeg** — Required by Whisper for audio decoding
-- **macOS** (for native TTS via `say` command)
+### 1. Prerequisites
+- Python 3.12+
+- A [Groq API Key](https://console.groq.com/keys)
 
-## Setup
-
+### 2. Installation
 ```bash
-# 1. Clone the repo
 git clone https://github.com/yourusername/EchoRAG.git
 cd EchoRAG
 
-# 2. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
-
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Install system deps (macOS)
-brew install ollama ffmpeg
-
-# 5. Start Ollama and pull the model
-brew services start ollama
-ollama pull phi3
-
-# 6. Start the backend
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# 7. Start the frontend (new terminal)
-streamlit run app/frontend/streamlit_app.py --server.port 8501
 ```
 
-Open `http://localhost:8501` in your browser.
+### 3. Environment Variables
+Create a `.env` file in the root directory (or simply export it):
+```bash
+export GROQ_API_KEY="gsk_your_api_key_here"
+```
 
-## API Endpoints
+### 4. Run the Application
+The easiest way to replicate the cloud environment locally is to use the custom launcher:
+```bash
+python launcher.py
+```
+This will cleanly boot FastAPI on port `8000` and Streamlit on port `8501`. 
+Open `http://localhost:8501` to use the app!
+
+## ☁️ Cloud Deployment (Render.com)
+
+This application is meticulously optimized to run flawlessly on the **Render Free Tier** (512MB RAM).
+
+1. Go to [Render.com](https://render.com) and create a new **Web Service**.
+2. Connect your GitHub repository.
+3. Render will automatically detect the `render.yaml` Blueprint file.
+4. Add your **`GROQ_API_KEY`** in the Render Environment Variables tab.
+5. Deploy!
+
+The custom `launcher.py` and strictly bound `127.0.0.1` internal routing ensures that standard Docker connection bugs are completely eliminated in the cloud sandbox.
+
+## 📡 API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Health check |
-| POST | `/upload?project=` | Upload document to a project |
-| POST | `/ask` | Ask a question (text) |
-| GET | `/projects` | List all projects |
-| POST | `/projects/create?name=` | Create a new project |
-| DELETE | `/projects/{name}` | Delete a project |
-| GET | `/documents?project=` | List documents in a project |
-| DELETE | `/documents/{name}?project=` | Delete a document |
-| POST | `/voice/transcribe` | Transcribe audio to text |
-| POST | `/voice/ask` | Full voice query pipeline |
+| GET    | `/health` | Health Check |
+| POST   | `/upload?project=xyz` | Ingests a PDF/TXT into the BM25 store |
+| POST   | `/ask` | Ask a RAG question (JSON Body: `{"query": "...", "project": "xyz"}`) |
+| GET    | `/projects` | List created projects |
+| POST   | `/projects/create?name=xyz`| Create a new project index |
+| POST   | `/voice/transcribe` | Upload `.wav` to Groq Whisper for STT |
+| POST   | `/voice/ask` | Full Audio-in, RAG, Audio-out pipeline |
 
-## Configuration
+## 📜 License
 
-Edit `app/utils/config.py`:
-
-```python
-MODEL_NAME = "phi3"           # Ollama model
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-TOP_K = 3                     # Chunks to retrieve
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 100
-STT_MODEL = "base"            # Whisper model size
-```
-
-## License
-
-MIT
+MIT License
