@@ -14,4 +14,6 @@ COPY . .
 
 EXPOSE 8000 8501
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 & streamlit run app/frontend/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true"]
+# Command to run both API and Streamlit. 
+# We use 'wait -n' so if either process crashes (e.g. backend OOM), the entire container restarts cleanly.
+CMD ["bash", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 & streamlit run app/frontend/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true & wait -n; exit 1"]
