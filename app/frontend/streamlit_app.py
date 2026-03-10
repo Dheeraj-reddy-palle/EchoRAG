@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 import os
 
-# Render automatically sets RENDER_EXTERNAL_URL (e.g., https://echorag.onrender.com)
-API_URL = os.environ.get("RENDER_EXTERNAL_URL", os.environ.get("API_URL", "http://localhost:8000"))
+# Streamlit `requests` run on the server, not in the browser. 
+# Therefore it can just talk to the FastAPI backend running in the same Docker container.
+API_URL = "http://0.0.0.0:8000"
 
 st.set_page_config(page_title="EchoRAG Assistant", page_icon="🗣️", layout="wide")
 
