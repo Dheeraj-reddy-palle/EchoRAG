@@ -2,7 +2,15 @@
 
 A lightning-fast, highly optimized Retrieval-Augmented Generation (RAG) assistant designed for instant cloud deployments (like Render's Free Tier). EchoRAG lets you upload documents, create topic-specific projects, and ask questions via text or voice.
 
-**[🌐 View Live App on Render](https://echorag.onrender.com)**
+**[🌐 Live App](https://echorag.onrender.com)** | **[📖 API Docs](https://echorag.onrender.com/docs)** | **[🩺 Backend Health](https://echorag.onrender.com/health)**
+
+## ⚡ Tech Stack
+
+- **Frontend:** Streamlit, Vanilla CSS (Glassmorphism)
+- **Backend:** FastAPI, Python 3.12, Uvicorn
+- **AI Models:** Groq API (`llama-3.1-8b`, `whisper-large-v3`)
+- **Vector Search:** `rank-bm25` (Pure Python TF-IDF Keyword matching)
+- **Deployment:** Docker, Render (Free Tier Optimized)
 
 ## 🚀 Key Features
 
